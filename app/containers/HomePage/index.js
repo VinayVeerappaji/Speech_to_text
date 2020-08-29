@@ -54,7 +54,7 @@ export default function HomePage() {
   const classes = useStyles();
   const [isListening, setIsListening] = useState(false)
   const [openDrawer, setOpenDrawer] = useState(false)
-  const [selectedLang, setSelectedLang] = useState('hi-IN')
+  const [selectedLang, setSelectedLang] = useState('en-IN')
   let finalValue = ''
   const outputRef = useRef();
   let start, stop
