@@ -84,7 +84,7 @@ export default function HomePage() {
         outputRef.current.innerHTML = finalValue
       } else {
         interimValue += event.results[i][0].transcript
-        outputRef.current.innerHTML = finalValue + `<i>${interimValue}</i>`
+        outputRef.current.innerHTML = finalValue + interimValue
       }
     }
   }
