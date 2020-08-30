@@ -5,18 +5,16 @@
  *
  */
 
-import React, { useEffect, useState, useRef } from 'react';
-import { FormattedMessage } from 'react-intl';
-import messages from './messages';
+import React, { useState } from 'react';
 import { Typography, Paper, Fab, Container, SwipeableDrawer, List, ListItem, ListItemText, ListSubheader } from '@material-ui/core';
 import MicIcon from '@material-ui/icons/Mic';
 import MicOffIcon from '@material-ui/icons/MicOff';
-import { makeStyles, useTheme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
-import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import MenuIcon from '@material-ui/icons/Menu'
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 
 const langauges = [
   { lang: 'English - India', code: 'en-IN' },
@@ -52,51 +50,25 @@ const useStyles = makeStyles((theme) => ({
 
 export default function HomePage() {
   const classes = useStyles();
-  const [isListening, setIsListening] = useState(false)
   const [openDrawer, setOpenDrawer] = useState(false)
   const [selectedLang, setSelectedLang] = useState('en-IN')
-  let finalValue = ''
-  const outputRef = useRef();
-  let start, stop
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-  if (typeof SpeechRecognition === "undefined") {
-    alert("We don't support your platform")
+
+  const {
+    transcript,
+    interimTranscript,
+    finalTranscript,
+    resetTranscript,
+    listening,
+  } = useSpeechRecognition()
+  
+  if (!SpeechRecognition.browserSupportsSpeechRecognition()) {
+    return null
   }
-
-  const recognition = new SpeechRecognition();
-  start = (lang) => {
-    console.log('start')
-    recognition.lang = lang ? lang : selectedLang
-    recognition.start();
-    setIsListening(true)
-  };
-  stop = () => {
-    console.log('stop')
-    setIsListening(false)
-    recognition.stop();
-  };
-  const onResult = event => {
-    console.log(event.results)
-    let interimValue = ''
-    for (var i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        finalValue += event.results[i][0].transcript
-        outputRef.current.innerHTML = finalValue
-      } else {
-        interimValue += event.results[i][0].transcript
-        outputRef.current.innerHTML = finalValue + interimValue
-      }
-    }
-  }
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.addEventListener("result", onResult);
-
-
+console.log(transcript)
   return (
     <>
-      <AppBar position="static">
-        <Toolbar>
+      <AppBar position="static" color={listening ? 'secondary' : 'primary'}>
+        <Toolbar >
           <IconButton onClick={() => setOpenDrawer(true)} edge="start" className={classes.menuButton} color="inherit" aria-label="menu">
             <MenuIcon />
           </IconButton>
@@ -118,7 +90,13 @@ export default function HomePage() {
         >
           {langauges.map(langauge => <ListItem
             button
-            onClick={() => { setSelectedLang(langauge.code); setOpenDrawer(false); stop(); start(langauge.code) }}
+            onClick={ () => { 
+               if(listening)
+               SpeechRecognition.abortListening()
+
+              setSelectedLang(langauge.code); 
+              setOpenDrawer(false);
+              }}
             selected={selectedLang == langauge.code}
           >
             <ListItemText>
@@ -129,9 +107,18 @@ export default function HomePage() {
       </SwipeableDrawer>
       <Container maxWidth="sm" className={classes.container}>
         <Paper className={classes.paper}>
-          <Typography variant='body1' ref={outputRef} />
+          <Typography variant='body1'>
+            {finalTranscript}{' '}
+            <i>{interimTranscript}</i>
+          </Typography>
         </Paper>
-        <Fab color='primary' className={classes.fab} onClick={() => isListening ? stop() : start()}>{isListening ? <MicOffIcon /> : <MicIcon />}</Fab>
+        <Fab 
+        color={listening ? 'secondary' : 'primary'} 
+        className={classes.fab} 
+        onClick={() => listening ? SpeechRecognition.stopListening() : SpeechRecognition.startListening({continuous: true, language: selectedLang})}
+        >
+        {listening ? <MicOffIcon /> : <MicIcon />}
+        </Fab>
       </Container>
     </>
   );
